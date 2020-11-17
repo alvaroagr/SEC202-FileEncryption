@@ -1,0 +1,138 @@
+# Cifrador/Descifrador de archivos
+Realizado por Juan David Carvajal, Alvaro Andres Gomez Rey, Juan David López, Julian Mabesoy
+
+## Introducción
+Decidimos escoger éste entre los proyectos disponibles, debido a que se basaba en algo que vimos en clase y que daba la oportunidad de profundizar un poco.
+
+El programa desarrollado tiene dos opciones:
+  1. Cifrar archivo: Debe recibir como entrada un archivo cualquiera, y una contraseña. A partir de la contraseña, debe generarse una clave de 128 bits, empleando el algoritmo PBKDF2. Por último, el archivo debe cifrarse con el algoritmo AES, usando la clave obtenida; el resultado debe escribirse a otro archivo, que debe contener también el hash SHA-1 del archivo sin cifrar.
+  1. Descifrado. Debe recibir como entrada un archivo cifrado y la contraseña. El programa deberá descifrar el archivo y escribir el resultado en un archivo nuevo. Luego, debe computar el hash SHA-1 del archivo descifrado y compararlo con el hash almacenado con el archivo cifrado.
+
+## Desarrollo
+
+### PBKDF2
+En primer lugar, era necesario convertir la contraseña de texto que fuera a ingresarse en una clave de 128-bits, es decir, de 8-bytes, utilizando PBKDF2. Como indican los *Public-Key Cryptography Standards*:
+> *PBKDF2 aplica una funcion seudoaleatoria para derivar claves.*
+>
+> [Request for Comments: 8018 - Password-Based Cryptography Specification Version 2.1][1]
+
+Entonces, la funcion ```PBKDF2 (P, S, c, dkLen)``` tiene los siguientes parametros:
+- P: La contraseña, la cual es un string.
+- S: El *salt* que es una secuencia de bytes.
+- c: El número de iteraciones que se llevara a cabo la funcion seudoaleatoria, un int.
+- dkLen: La longitud en bits de la clave que sera generada.
+
+Por ende, se desarollo el siguiente metodo, basandose en [una implementación existente con la función seudoaleatoria HmacSHA12][2]
+```java
+public static byte[] PBKDF2(char[] password, byte[] salt, int c, int length) {
+	try {
+		SecretKeyFactory kf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
+		PBEKeySpec spec = new PBEKeySpec(password, salt, c, length);
+		SecretKey key = kf.generateSecret(spec);
+		return key.getEncoded();
+	} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+		throw new RuntimeException(e);
+	}
+}
+```
+
+### Cifrado y descifrado de archivos
+Realizar esta parte fue más sencillo, debido a que se trabajo este concepto durante uno de los entregables de la clase. En dicha ocasión, era necesario cifrar mensajes hexadecimales para obtener resultados hexadecimales cifrados ya conocidos utilizando AES. Para resumir, el código relevante para el problema es el siguiente:
+```java
+// theKey y theMsg son de tipo byte[]
+theKey = hexToBytes("00000000000000000000000000000000");
+theMsg = hexToBytes("ffffffffffffc0000000000000000000")
+KeySpec ks = new SecretKeySpec(theKey, "AES");
+Cipher cf = Cipher.getInstance("AES/ECB/NoPadding");
+cf.init(Cipher.ENCRYPT_MODE,(SecretKeySpec) ks);
+byte[] theCph = cf.doFinal(theMsg);
+```
+Lo que nos interesa son las ultimas cuatro lineas: creamos una especificacion de claves con la clave dada y especificando el modo AES, inicializamos un cifrado en modo de cifrado con dicha clave y especificando la transformación que deseamos usar, y finalmente ciframos el mensaje a un arreglo de bytes cifrado.
+
+Entonces, si se quiere adaptar dicho codigo al problema, simplemente es cuestión de leer el contenido de un archivo, aplicar el mismo procedimiento, y escribir el contenido cifrado en un archivo con el mismo nombre y que finalize en `.cif`, y para reversarlo es solo cuestion de cambiar el modo a `DECRYPT_MODE`. Los metodos que se crearon fueron estos:
+```java
+public static void encrypt(byte[] key, File in, File out) 
+		throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, 
+		IllegalBlockSizeException, BadPaddingException {
+	// Initialize the cipher
+	KeySpec ks = new SecretKeySpec(key, "AES");
+	Cipher cf = Cipher.getInstance("AES/ECB/PKCS5Padding");
+	cf.init(Cipher.ENCRYPT_MODE, (SecretKeySpec) ks);
+	
+	// Initialize the Input and Output streams
+	FileInputStream fis = new FileInputStream(in);
+	FileOutputStream fos = new FileOutputStream(out);
+	
+	// Determine the size of the buffer
+	int bufferBytes = Math.min(fis.available(), 64);
+	byte[] buffer = new byte[bufferBytes];
+	
+	// While remaining bytes still fit in a 64byte buffer.
+	while(buffer.length == 64) {
+		fis.read(buffer);
+		byte[] encryptedBuffer = cf.update(buffer);
+		fos.write(encryptedBuffer);
+		bufferBytes = Math.min(fis.available(), 64);
+		buffer = new byte[bufferBytes];
+	}
+	// Last portion of data
+	fis.read(buffer);
+	byte[] encryptedBuffer = cf.doFinal(buffer);
+	fos.write(encryptedBuffer);
+	
+	// Close the Input and Output streams
+	fis.close();
+	fos.close();
+}
+
+public static void decrypt(byte[] key, File in, File out) 
+		throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, 
+		IllegalBlockSizeException, BadPaddingException {
+	// Initialize the cipher
+	KeySpec ks = new SecretKeySpec(key, "AES");
+	Cipher cf = Cipher.getInstance("AES/ECB/PKCS5Padding");
+	cf.init(Cipher.DECRYPT_MODE, (SecretKeySpec) ks);
+	
+	// Initialize the Input and Output streams
+	FileInputStream fis = new FileInputStream(in);
+	FileOutputStream fos = new FileOutputStream(out);
+	
+	// Determine the size of the buffer
+	int bufferBytes = Math.min(fis.available(), 64);
+	byte[] buffer = new byte[bufferBytes];
+	
+	// While remaining bytes still fit in a 64byte buffer.
+	while(buffer.length == 64) {
+		fis.read(buffer);
+		byte[] encryptedBuffer = cf.update(buffer);
+		fos.write(encryptedBuffer);
+		bufferBytes = Math.min(fis.available(), 64);
+		buffer = new byte[bufferBytes];
+	}
+	// Last portion of data
+	fis.read(buffer);
+	byte[] encryptedBuffer = cf.doFinal(buffer);
+	fos.write(encryptedBuffer);
+	
+	// Close the Input and Output streams
+	fis.close();
+	fos.close();
+}
+```
+
+### Hash SHA-1
+
+### GUI
+
+## Dificultades
+- Dificultad a la hota de cifrar archivos por encima de los 2.1~ GB
+Tambien lo de agregar el hash SHA1 al archivo.
+
+## Conclusiones
+
+
+[1]: https://tools.ietf.org/html/rfc8018#section-5.2
+[2]: https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html#secretkeyfactory-algorithms
+
+**Universidad Icesi. Curso de Ciberseguridad**
+**2020.**
