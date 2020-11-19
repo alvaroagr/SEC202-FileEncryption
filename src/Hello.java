@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -37,21 +38,11 @@ public class Hello {
         // Generate Key from Password
 		byte[] key= PBKDF2(password.toCharArray(), salt.getBytes(), iterations, keyLength);
 		
-		//Generate SHA-1 File
-		File file= new File("C:\\Users\\usuario\\Desktop\\test.docx");
-		try {
-			System.out.println(FileEncrypterDecrypter.computeSHA1(file));
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
 		// Test
 		try {
-			encrypt(key, "C:\\Users\\usuario\\Desktop\\test.docx", "C:\\Users\\usuario\\Desktop\\test.docx.cif");
+			encrypt(key, "C:\\Users\\usuario\\Desktop\\test.docx");
 			decrypt(key, "C:\\Users\\usuario\\Desktop\\test.docx.cif", "C:\\Users\\usuario\\Desktop\\test-decif.docx");
-		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException
-				| BadPaddingException | IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
@@ -83,10 +74,10 @@ public class Hello {
 	 * @param key Key used for the AES algorithm
 	 * @param fileInputPath path in which the target file is located.
 	 * @param fileOutputPath path in which the ciphered file will be written.
+	 * @throws Exception 
 	 */
-	public static void encrypt(byte[] key, String fileInputPath, String fileOutputPath) 
-			throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, 
-			IllegalBlockSizeException, BadPaddingException {
+	public static void encrypt(byte[] key, String fileInputPath) 
+			throws Exception {
 		// Initialize the cipher
 		KeySpec ks = new SecretKeySpec(key, "AES");
 		Cipher cf = Cipher.getInstance("AES/ECB/PKCS5Padding");
@@ -94,7 +85,10 @@ public class Hello {
 		
 		// Initialize the Input and Output streams
 		FileInputStream fis = new FileInputStream(fileInputPath);
-		FileOutputStream fos = new FileOutputStream(fileOutputPath);
+		FileOutputStream fos = new FileOutputStream(fileInputPath+".cif");
+		FileOutputStream fos2 = new FileOutputStream(fileInputPath+".hash");
+		
+		
 		
 		// Determine the size of the buffer
 		int bufferBytes = Math.min(fis.available(), 64);
@@ -112,10 +106,12 @@ public class Hello {
 		fis.read(buffer);
 		byte[] encryptedBuffer = cf.doFinal(buffer);
 		fos.write(encryptedBuffer);
+		fos2.write(FileEncrypterDecrypter.computeSHA1(new File(fileInputPath)).getBytes(Charset.forName("UTF-8")));
 		
 		// Close the Input and Output streams
 		fis.close();
 		fos.close();
+		fos2.close();
 	}
 	
 	/**
