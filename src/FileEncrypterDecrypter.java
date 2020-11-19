@@ -1,8 +1,12 @@
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
@@ -203,19 +207,25 @@ public class FileEncrypterDecrypter {
 	}
 
 
-	public static String computeSHA1 (File file){
-			MessageDigest digest = MessageDigest.getInstance("SHA-1");
-			InputStream fis = new FileInputStream(file);
-			int n = 0;
-			byte[] buffer = new byte[8192];
-			while (n != -1) {
-					n = fis.read(buffer);
-					if (n > 0) {
-							digest.update(buffer, 0, n);
-					}
-			}
-			
-			return String s = new String(digest.digest(), StandardCharsets.UTF_8);
+	public static String computeSHA1 (File file) throws Exception{
+		MessageDigest sha1 = MessageDigest.getInstance("SHA1");
+        FileInputStream fis = new FileInputStream(file);
+  
+        byte[] data = new byte[1024];
+        int read = 0; 
+        while ((read = fis.read(data)) != -1) {
+            sha1.update(data, 0, read);
+        };
+        byte[] hashBytes = sha1.digest();
+  
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < hashBytes.length; i++) {
+          sb.append(Integer.toString((hashBytes[i] & 0xff) + 0x100, 16).substring(1));
+        }
+         
+        String fileHash = sb.toString();
+        fis.close();
+		return fileHash;
 	
 	}
 }

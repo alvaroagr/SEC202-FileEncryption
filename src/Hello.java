@@ -37,16 +37,25 @@ public class Hello {
         // Generate Key from Password
 		byte[] key= PBKDF2(password.toCharArray(), salt.getBytes(), iterations, keyLength);
 		
+		//Generate SHA-1 File
+		File file= new File("C:\\Users\\usuario\\Desktop\\test.docx");
+		try {
+			System.out.println(FileEncrypterDecrypter.computeSHA1(file));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		// Test
 		try {
-			encrypt(key, "C:\\Users\\alvaro\\Documents\\test.docx", "C:\\Users\\alvaro\\Documents\\test.docx.cif");
-			decrypt(key, "C:\\Users\\alvaro\\Documents\\test.docx.cif", "C:\\Users\\alvaro\\Documents\\test-decif.docx");
+			encrypt(key, "C:\\Users\\usuario\\Desktop\\test.docx", "C:\\Users\\usuario\\Desktop\\test.docx.cif");
+			decrypt(key, "C:\\Users\\usuario\\Desktop\\test.docx.cif", "C:\\Users\\usuario\\Desktop\\test-decif.docx");
 		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException
 				| BadPaddingException | IOException e) {
 			e.printStackTrace();
 		}
+		
 	}
-	
 	
 	/**
 	 * PBKDF2 implementation based on what the Public-Key Cryptography Standards say on the subject. <br>
