@@ -201,4 +201,21 @@ public class FileEncrypterDecrypter {
 		fis.close();
 		fos.close();
 	}
+
+
+	public static String computeSHA1 (File file){
+			MessageDigest digest = MessageDigest.getInstance("SHA-1");
+			InputStream fis = new FileInputStream(file);
+			int n = 0;
+			byte[] buffer = new byte[8192];
+			while (n != -1) {
+					n = fis.read(buffer);
+					if (n > 0) {
+							digest.update(buffer, 0, n);
+					}
+			}
+			
+			return String s = new String(digest.digest(), StandardCharsets.UTF_8);
+	
+	}
 }
