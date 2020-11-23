@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
@@ -47,89 +48,7 @@ public class FileEncrypterDecrypter {
 		}
 	}
 
-	/**
-	 * Ciphers a file utilizing a given 128-bit key.
-	 * 
-	 * @param key            Key used for the AES algorithm
-	 * @param fileInputPath  path in which the target file is located.
-	 * @param fileOutputPath path in which the ciphered file will be written.
-	 */
-	public static void encrypt(byte[] key, String fileInputPath, String fileOutputPath)
-			throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-			IllegalBlockSizeException, BadPaddingException {
-		// Initialize the cipher
-		KeySpec ks = new SecretKeySpec(key, "AES");
-		Cipher cf = Cipher.getInstance("AES/ECB/PKCS5Padding");
-		cf.init(Cipher.ENCRYPT_MODE, (SecretKeySpec) ks);
 
-		// Initialize the Input and Output streams
-		FileInputStream fis = new FileInputStream(fileInputPath);
-		FileOutputStream fos = new FileOutputStream(fileOutputPath);
-
-		// Determine the size of the buffer
-		int bufferBytes = Math.min(fis.available(), 64);
-		byte[] buffer = new byte[bufferBytes];
-
-		// While remaining bytes still fit in a 64byte buffer.
-		while (buffer.length == 64) {
-			fis.read(buffer);
-			byte[] encryptedBuffer = cf.update(buffer);
-			fos.write(encryptedBuffer);
-			bufferBytes = Math.min(fis.available(), 64);
-			System.out.println(bufferBytes + "");
-			buffer = new byte[bufferBytes];
-		}
-		// Last portion of data
-		fis.read(buffer);
-		byte[] encryptedBuffer = cf.doFinal(buffer);
-		fos.write(encryptedBuffer);
-
-		// Close the Input and Output streams
-		fis.close();
-		fos.close();
-	}
-
-	/**
-	 * Deciphers a file utilizing a given 128-bit key.
-	 * 
-	 * @param key            Key used for the AES algorithm.
-	 * @param fileInputPath  path in which the target file is located.
-	 * @param fileOutputPath path in which the deciphered file will be written.
-	 */
-	public static void decrypt(byte[] key, String fileInputPath, String fileOutputPath)
-			throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-			IllegalBlockSizeException, BadPaddingException {
-		// Initialize the cipher
-		KeySpec ks = new SecretKeySpec(key, "AES");
-		Cipher cf = Cipher.getInstance("AES/ECB/PKCS5Padding");
-		cf.init(Cipher.DECRYPT_MODE, (SecretKeySpec) ks);
-
-		// Initialize the Input and Output streams
-		FileInputStream fis = new FileInputStream(fileInputPath);
-		FileOutputStream fos = new FileOutputStream(fileOutputPath);
-
-		// Determine the size of the buffer
-		int bufferBytes = Math.min(fis.available(), 64);
-		byte[] buffer = new byte[bufferBytes];
-
-		// While remaining bytes still fit in a 64byte buffer.
-		while (buffer.length == 64) {
-			fis.read(buffer);
-			byte[] encryptedBuffer = cf.update(buffer);
-			fos.write(encryptedBuffer);
-			bufferBytes = Math.min(fis.available(), 64);
-			System.out.println(bufferBytes + "");
-			buffer = new byte[bufferBytes];
-		}
-		// Last portion of data
-		fis.read(buffer);
-		byte[] encryptedBuffer = cf.doFinal(buffer);
-		fos.write(encryptedBuffer);
-
-		// Close the Input and Output streams
-		fis.close();
-		fos.close();
-	}
 
 	/**
 	 * Encrypts a file utilizing a given 128-bit key.
@@ -137,9 +56,9 @@ public class FileEncrypterDecrypter {
 	 * @param key           Key used for the AES algorithm
 	 * @param fileInputPath path in which the target file is located.
 	 * @param out           path in which the encrypted file will be written.
+	 * @throws Exception 
 	 */
-	public static void encrypt(byte[] key, File in, File out) throws IOException, NoSuchAlgorithmException,
-			NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+	public static void encrypt(byte[] key, File in) throws Exception {
 		// Initialize the cipher
 		KeySpec ks = new SecretKeySpec(key, "AES");
 		Cipher cf = Cipher.getInstance("AES/ECB/PKCS5Padding");
@@ -147,7 +66,9 @@ public class FileEncrypterDecrypter {
 
 		// Initialize the Input and Output streams
 		FileInputStream fis = new FileInputStream(in);
-		FileOutputStream fos = new FileOutputStream(out);
+		FileOutputStream fos = new FileOutputStream(in.getAbsolutePath()+".cif");
+		FileOutputStream fos2 = new FileOutputStream(in.getAbsolutePath()+".hash");
+
 
 		// Determine the size of the buffer
 		int bufferBytes = Math.min(fis.available(), 64);
@@ -159,17 +80,20 @@ public class FileEncrypterDecrypter {
 			byte[] encryptedBuffer = cf.update(buffer);
 			fos.write(encryptedBuffer);
 			bufferBytes = Math.min(fis.available(), 64);
-			System.out.println(bufferBytes + "");
 			buffer = new byte[bufferBytes];
 		}
 		// Last portion of data
 		fis.read(buffer);
 		byte[] encryptedBuffer = cf.doFinal(buffer);
 		fos.write(encryptedBuffer);
+		fos2.write(FileEncrypterDecrypter.computeSHA1(new File(in.getAbsolutePath())).getBytes(Charset.forName("UTF-8")));
+
 
 		// Close the Input and Output streams
 		fis.close();
 		fos.close();
+		fos2.close();
+
 	}
 
 	/**
@@ -210,7 +134,6 @@ public class FileEncrypterDecrypter {
 			byte[] encryptedBuffer = cf.update(buffer);
 			fos.write(encryptedBuffer);
 			bufferBytes = Math.min(fis.available(), 64);
-			System.out.println(bufferBytes + "");
 			buffer = new byte[bufferBytes];
 		}
 		// Last portion of data
