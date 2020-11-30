@@ -119,7 +119,7 @@ public class FileEncrypterDecrypter {
 		// Initialize the cipher
 		KeySpec ks = new SecretKeySpec(key, "AES");
 		Cipher cf = Cipher.getInstance("AES/ECB/PKCS5Padding");
-		cf.init(Cipher.DECRYPT_MODE, (SecretKeySpec) ks);
+		cf.init(Cipher.DECRYPT_MODE, (SecretKeySpec) ks);		
 
 		// Initialize the Input and Output streams
 		FileInputStream fis = new FileInputStream(in);

@@ -10,8 +10,8 @@ import java.awt.Font;
 import java.awt.Color;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPasswordField;
 import javax.swing.JSeparator;
-import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -31,12 +31,12 @@ public class GUI {
 	public final static int KEY_LENGTH = 128;
 	
 	private JFrame frame;
-	private JTextField txtEncryptContra;
-	private JTextField textDecryptContra;
+	private JPasswordField txtEncryptContra;
+	private JPasswordField textDecryptContra;
 	private FileEncrypterDecrypter modelo;
 	File inEnc;
 	File inDec;
-	String sha;
+	File inHash;
 
 	/**
 	 * Launch the application.
@@ -58,6 +58,7 @@ public class GUI {
 	 * Create the application.
 	 */
 	public GUI() {
+		modelo= new FileEncrypterDecrypter();
 		initialize();
 		
 	}
@@ -76,24 +77,23 @@ public class GUI {
 		JButton btnEncrypt = new JButton("ENCRYPT");
 		btnEncrypt.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (txtEncryptContra == null || txtEncryptContra.equals(" ") )  {
-					System.out.println("Vacio");
+				if (txtEncryptContra == null || String.valueOf(txtEncryptContra.getPassword()).equals("") )  {
 					JOptionPane.showMessageDialog(frame, "FORMATO NO VALIDO", "ERROR",JOptionPane.ERROR_MESSAGE);
 				}else {
-					String contra = txtEncryptContra.getText();
-					
-					byte[] key = contra.getBytes();
-					System.out.println("contra: "+ txtEncryptContra.getText() );
-					try {
-						//modelo.encrypt(key, in);
-						System.out.println("clave: "+key +"\n" + "in: " + inEnc);
-					} catch (Exception e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
+					char[] contra = txtEncryptContra.getPassword();
+					if(inEnc!= null) {						
+						try {
+							modelo.encrypt(modelo.PBKDF2(contra, SALT.getBytes(), ITERATIONS, KEY_LENGTH), inEnc);
+							JOptionPane.showMessageDialog(frame, "Se ha encriptado el archivo: " +inEnc.getCanonicalPath(), "Encriptar",JOptionPane.INFORMATION_MESSAGE);
+						} catch (Exception e1) {
+							e1.printStackTrace();
+						}
 					}
 				}
 			}
 		});
+		
+		
 		btnEncrypt.setBackground(SystemColor.activeCaption);
 		btnEncrypt.setFont(new Font("Sitka Small", Font.BOLD, 11));
 		btnEncrypt.setBounds(159, 120, 89, 23);
@@ -102,12 +102,21 @@ public class GUI {
 		JButton btnDecrypt = new JButton("DECRYPT");
 		btnDecrypt.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (textDecryptContra == null || !textDecryptContra.equals("") )  {
-					System.out.println("Vacio");
+				if (textDecryptContra == null || String.valueOf(textDecryptContra.getPassword()).equals("") )  {
 					JOptionPane.showMessageDialog(frame, "FORMATO NO VALIDO", "ERROR",JOptionPane.ERROR_MESSAGE);
 				}else {
-					String contra = txtEncryptContra.getText();
-					System.out.println("contra: "+ txtEncryptContra.getText() );
+					char[] contra = textDecryptContra.getPassword();
+					if(inDec!= null) {						
+						try {
+							if(modelo.decrypt(modelo.PBKDF2(contra, SALT.getBytes(), ITERATIONS, KEY_LENGTH), inDec, new File(inDec.getParent()+"/"+"decrypt.docx"), inHash)== true) {
+								JOptionPane.showMessageDialog(frame, "El hash del cifrado concide con el decifrado", "Hash Valido",JOptionPane.INFORMATION_MESSAGE);
+							}else {
+								JOptionPane.showMessageDialog(frame, "El hash del cifrado no concide con el decifrado", "Hash Invalido",JOptionPane.ERROR_MESSAGE);
+							}
+						} catch (Exception e1) {
+							JOptionPane.showMessageDialog(frame, "La contraseña no concide", "ERROR",JOptionPane.ERROR_MESSAGE);
+						}
+					}	
 				}
 			}
 		});
@@ -132,7 +141,7 @@ public class GUI {
 		lblEncryptContra.setBounds(25, 60, 100, 23);
 		frame.getContentPane().add(lblEncryptContra);
 		
-		txtEncryptContra = new JTextField();
+		txtEncryptContra = new JPasswordField();
 		txtEncryptContra.addActionListener(null);
 		txtEncryptContra.setToolTipText("");
 		txtEncryptContra.setBounds(147, 59, 112, 20);
@@ -143,16 +152,12 @@ public class GUI {
 		btnFileEncrypt.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fc = new JFileChooser();
-				//FileFilter filter = new FileNameExtensionFilter(".cif o .hash", new String[] {"cif", "hash"});
-				//fc.setFileFilter(filter);
-				//fc.addChoosableFileFilter(filter);
 				int seleccion = fc.showOpenDialog(frame);
 				
 				
 				if(seleccion == JFileChooser.APPROVE_OPTION) {
 					 inEnc = fc.getSelectedFile();
 					 System.out.println(inEnc);
-					
 				}
 			}
 		});
@@ -170,47 +175,45 @@ public class GUI {
 		lblDecryptContra.setBounds(25, 212, 100, 23);
 		frame.getContentPane().add(lblDecryptContra);
 		
-		textDecryptContra = new JTextField();
+		textDecryptContra = new JPasswordField();
 		textDecryptContra.setToolTipText("");
 		textDecryptContra.setColumns(10);
 		textDecryptContra.setBounds(147, 211, 112, 20);
 		frame.getContentPane().add(textDecryptContra);
 		
-		JButton btnNewButton = new JButton("Subir archivo");
-		btnNewButton.addActionListener(new ActionListener() {
+		JButton btnFileDecrypt = new JButton("Subir archivo");
+		btnFileDecrypt.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fc = new JFileChooser();
+				int seleccion = fc.showOpenDialog(frame);
+				
+				
+				if(seleccion == JFileChooser.APPROVE_OPTION) {
+					 inDec = fc.getSelectedFile();
+					 System.out.println(inDec);
+				}else {
+					JOptionPane.showMessageDialog(frame, "FORMATO NO VALIDO", "ERROR",JOptionPane.ERROR_MESSAGE);					
+				}
+			}
+		});
+		btnFileDecrypt.setBounds(25, 258, 124, 23);
+		frame.getContentPane().add(btnFileDecrypt);
+		
+		JButton btnShaButton = new JButton("Subir Hash");
+		btnShaButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fc = new JFileChooser();
 				int seleccion = fc.showOpenDialog(frame);
 				
 				if(seleccion == JFileChooser.APPROVE_OPTION) {
-					inDec = fc.getSelectedFile();
-					JOptionPane.showMessageDialog(frame, "FORMATO NO VALIDO", "ERROR",JOptionPane.ERROR_MESSAGE);
+					inHash = fc.getSelectedFile();
 				}else {
-					
+					JOptionPane.showMessageDialog(frame, "FORMATO NO VALIDO", "ERROR",JOptionPane.ERROR_MESSAGE);					
 				}
 			}
 		});
-		btnNewButton.setBounds(25, 258, 124, 23);
-		frame.getContentPane().add(btnNewButton);
-		
-		JButton btnSha = new JButton("Sha-1");
-		btnSha.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if(inDec == null) {
-					System.out.println("vacio");
-				}else {
-					 try {
-						sha = modelo.computeSHA1(inDec);
-						System.out.println("SHA-1: "+"\n"+sha);
-					} catch (Exception e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-				}
-			}
-		});
-		btnSha.setBounds(159, 258, 89, 23);
-		frame.getContentPane().add(btnSha);
+		btnShaButton.setBounds(159, 258, 89, 23);
+		frame.getContentPane().add(btnShaButton);
 	}
 	
 
