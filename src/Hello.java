@@ -29,6 +29,7 @@ public class Hello {
 	public final static int KEY_LENGTH = 128;
 
 	
+	/*
 	public static void main(String[] args) {	
 		// PBKDF2 Settings
 		String password = "mynameisandres";
@@ -49,6 +50,6 @@ public class Hello {
 		
 	}
 	
-	
+	*/
 
 }

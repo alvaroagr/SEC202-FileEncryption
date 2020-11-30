@@ -12,16 +12,31 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import model.FileEncrypterDecrypter;
+
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.awt.event.ActionEvent;
 import java.awt.SystemColor;
 
+
+
 public class GUI {
 
+	public final static String SALT = "1234";
+	public final static int ITERATIONS = 10000;
+	public final static int KEY_LENGTH = 128;
+	
 	private JFrame frame;
 	private JTextField txtEncryptContra;
 	private JTextField textDecryptContra;
+	private FileEncrypterDecrypter modelo;
+	File inEnc;
+	File inDec;
+	String sha;
 
 	/**
 	 * Launch the application.
@@ -44,6 +59,7 @@ public class GUI {
 	 */
 	public GUI() {
 		initialize();
+		
 	}
 
 	/**
@@ -55,16 +71,26 @@ public class GUI {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		
+		
+		
 		JButton btnEncrypt = new JButton("ENCRYPT");
 		btnEncrypt.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//System.out.println("boton encryot");
-				if (txtEncryptContra == null || !txtEncryptContra.equals("") )  {
+				if (txtEncryptContra == null || txtEncryptContra.equals(" ") )  {
 					System.out.println("Vacio");
 					JOptionPane.showMessageDialog(frame, "FORMATO NO VALIDO", "ERROR",JOptionPane.ERROR_MESSAGE);
 				}else {
 					String contra = txtEncryptContra.getText();
+					
+					byte[] key = contra.getBytes();
 					System.out.println("contra: "+ txtEncryptContra.getText() );
+					try {
+						//modelo.encrypt(key, in);
+						System.out.println("clave: "+key +"\n" + "in: " + inEnc);
+					} catch (Exception e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
 				}
 			}
 		});
@@ -76,8 +102,7 @@ public class GUI {
 		JButton btnDecrypt = new JButton("DECRYPT");
 		btnDecrypt.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//System.out.println("boton encryot");
-				if (txtEncryptContra == null || !txtEncryptContra.equals("") )  {
+				if (textDecryptContra == null || !textDecryptContra.equals("") )  {
 					System.out.println("Vacio");
 					JOptionPane.showMessageDialog(frame, "FORMATO NO VALIDO", "ERROR",JOptionPane.ERROR_MESSAGE);
 				}else {
@@ -118,15 +143,20 @@ public class GUI {
 		btnFileEncrypt.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fc = new JFileChooser();
+				//FileFilter filter = new FileNameExtensionFilter(".cif o .hash", new String[] {"cif", "hash"});
+				//fc.setFileFilter(filter);
+				//fc.addChoosableFileFilter(filter);
 				int seleccion = fc.showOpenDialog(frame);
 				
+				
 				if(seleccion == JFileChooser.APPROVE_OPTION) {
-					File fichero = fc.getSelectedFile();
+					 inEnc = fc.getSelectedFile();
+					 System.out.println(inEnc);
 					
 				}
 			}
 		});
-		btnFileEncrypt.setBounds(25, 118, 100, 23);
+		btnFileEncrypt.setBounds(25, 118, 117, 23);
 		frame.getContentPane().add(btnFileEncrypt);
 		
 		JLabel lblDecrypt = new JLabel("DECRYPT");
@@ -153,28 +183,37 @@ public class GUI {
 				int seleccion = fc.showOpenDialog(frame);
 				
 				if(seleccion == JFileChooser.APPROVE_OPTION) {
-					File fichero = fc.getSelectedFile();
+					inDec = fc.getSelectedFile();
+					JOptionPane.showMessageDialog(frame, "FORMATO NO VALIDO", "ERROR",JOptionPane.ERROR_MESSAGE);
+				}else {
 					
 				}
 			}
 		});
-		btnNewButton.setBounds(25, 258, 100, 23);
+		btnNewButton.setBounds(25, 258, 124, 23);
 		frame.getContentPane().add(btnNewButton);
 		
-		JButton btnNewButton_1 = new JButton("Sha-1");
-		btnNewButton_1.addActionListener(new ActionListener() {
+		JButton btnSha = new JButton("Sha-1");
+		btnSha.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if(inDec == null) {
+					System.out.println("vacio");
+				}else {
+					 try {
+						sha = modelo.computeSHA1(inDec);
+						System.out.println("SHA-1: "+"\n"+sha);
+					} catch (Exception e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
 			}
 		});
-		btnNewButton_1.setBounds(159, 258, 89, 23);
-		frame.getContentPane().add(btnNewButton_1);
+		btnSha.setBounds(159, 258, 89, 23);
+		frame.getContentPane().add(btnSha);
 	}
 	
-	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == txtEncryptContra) {
-			System.out.println("contra: "+ txtEncryptContra.getText() );
-		}
-	}
+
 
 	
 	
