@@ -19,6 +19,7 @@ import model.FileEncrypterDecrypter;
 
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.nio.charset.Charset;
 import java.awt.event.ActionEvent;
 import java.awt.SystemColor;
 
@@ -83,8 +84,23 @@ public class GUI {
 					char[] contra = txtEncryptContra.getPassword();
 					if(inEnc!= null) {						
 						try {
-							modelo.encrypt(modelo.PBKDF2(contra, SALT.getBytes(), ITERATIONS, KEY_LENGTH), inEnc);
-							JOptionPane.showMessageDialog(frame, "Se ha encriptado el archivo: " +inEnc.getCanonicalPath(), "Encriptar",JOptionPane.INFORMATION_MESSAGE);
+							byte[] key = modelo.PBKDF2(contra, SALT.getBytes(), ITERATIONS, KEY_LENGTH);
+							File outEnc = new File(inEnc.getAbsolutePath()+".cif");
+							File outHash = new File(inEnc.getAbsolutePath()+".hash");
+							
+							// Encrypt the file
+							modelo.encrypt(key, inEnc, outEnc);
+							
+							// Generate hash
+							modelo.generateSHA1(inEnc, outHash);
+//							modelo.computeSHA1(inEnc).getBytes(Charset.forName("UTF-8"));
+							
+							
+							
+							
+							
+							
+							JOptionPane.showMessageDialog(frame, "Se ha cifrado el archivo: " +inEnc.getCanonicalPath(), "Encriptar",JOptionPane.INFORMATION_MESSAGE);
 						} catch (Exception e1) {
 							e1.printStackTrace();
 						}
@@ -108,12 +124,27 @@ public class GUI {
 					char[] contra = textDecryptContra.getPassword();
 					if(inDec!= null) {						
 						try {
-							if(modelo.decrypt(modelo.PBKDF2(contra, SALT.getBytes(), ITERATIONS, KEY_LENGTH), inDec, new File(inDec.getParent()+"/"+"decrypt.docx"), inHash)== true) {
-								JOptionPane.showMessageDialog(frame, "El hash del cifrado concide con el decifrado", "Hash Valido",JOptionPane.INFORMATION_MESSAGE);
-							}else {
-								JOptionPane.showMessageDialog(frame, "El hash del cifrado no concide con el decifrado", "Hash Invalido",JOptionPane.ERROR_MESSAGE);
+							String path = inDec.getAbsolutePath();
+							path = path.substring(0, path.length() - 4);
+							File outDec = new File(path);
+							
+							byte[] key = modelo.PBKDF2(contra, SALT.getBytes(), ITERATIONS, KEY_LENGTH);
+							
+							modelo.decrypt(key, inDec, outDec);
+							
+							if(modelo.verifySHA1(outDec, inHash)) {
+								JOptionPane.showMessageDialog(frame, "Su archivo ha sido descifrado. Los hashes coinciden.", "Hash Valido",JOptionPane.INFORMATION_MESSAGE);
+							} else {
+								JOptionPane.showMessageDialog(frame, "Su archivo ha sido descifrado, pero puede que haya sido manipulado. Los hashes no coinciden.", "Hash Invalido",JOptionPane.WARNING_MESSAGE);
 							}
+							
+//							if(modelo.decrypt(modelo.PBKDF2(contra, SALT.getBytes(), ITERATIONS, KEY_LENGTH), inDec, new File(inDec.getParent()+"/"+"decrypt.docx"), inHash)== true) {
+//								JOptionPane.showMessageDialog(frame, "El hash del cifrado concide con el decifrado", "Hash Valido",JOptionPane.INFORMATION_MESSAGE);
+//							}else {
+//								JOptionPane.showMessageDialog(frame, "El hash del cifrado no concide con el decifrado", "Hash Invalido",JOptionPane.ERROR_MESSAGE);
+//							}
 						} catch (Exception e1) {
+							e1.printStackTrace();
 							JOptionPane.showMessageDialog(frame, "La contraseña no concide", "ERROR",JOptionPane.ERROR_MESSAGE);
 						}
 					}	
