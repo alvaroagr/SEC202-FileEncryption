@@ -24,7 +24,7 @@ Entonces, la funcion ```PBKDF2 (P, S, c, dkLen)``` tiene los siguientes parametr
 
 Por ende, se desarollo el siguiente metodo, basandose en [una implementación existente con la función seudoaleatoria HmacSHA12][2]
 ```java
-public static byte[] PBKDF2(char[] password, byte[] salt, int c, int length) {
+public byte[] PBKDF2(char[] password, byte[] salt, int c, int length) {
 	try {
 		SecretKeyFactory kf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
 		PBEKeySpec spec = new PBEKeySpec(password, salt, c, length);
@@ -51,7 +51,7 @@ Lo que nos interesa son las ultimas cuatro lineas: creamos una especificacion de
 
 Entonces, si se quiere adaptar dicho codigo al problema, simplemente es cuestión de leer el contenido de un archivo, aplicar el mismo procedimiento, y escribir el contenido cifrado en un archivo con el mismo nombre y que finalize en `.cif`, y para reversarlo es solo cuestion de cambiar el modo a `DECRYPT_MODE`. Los metodos que se crearon fueron estos:
 ```java
-public static void encrypt(byte[] key, File in, File out) 
+public void encrypt(byte[] key, File in, File out) 
 		throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, 
 		IllegalBlockSizeException, BadPaddingException {
 	// Initialize the cipher
@@ -85,7 +85,7 @@ public static void encrypt(byte[] key, File in, File out)
 	fos.close();
 }
 
-public static void decrypt(byte[] key, File in, File out) 
+public void decrypt(byte[] key, File in, File out) 
 		throws IOException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, 
 		IllegalBlockSizeException, BadPaddingException {
 	// Initialize the cipher
@@ -126,7 +126,7 @@ public static void decrypt(byte[] key, File in, File out)
 
 ## Dificultades
 - Dificultad a la hota de cifrar archivos por encima de los 2.1~ GB
-Tambien lo de agregar el hash SHA1 al archivo.
+- Agregar el SHA1 al final del archivo. Entendemos como se deberia hacer, pero no supimos hacerlo apropiadamanete, así que lo que se hizo fue que el hash fuese generado como un archivo por aparte que tambien hay que incluir al descifrar archivos.
 
 ## Conclusiones
 
