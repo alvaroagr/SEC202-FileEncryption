@@ -245,7 +245,6 @@ JButton btnDecrypt = new JButton("DECRYPT");
 - Por parte de la interfaz grafica esta se implemento por medio de JavaFx, el cual ninguno de los integrantes manejaba muy bien, se procedió a reaprender este entorno para poder desarrollar la aplicación de forma correcta.
 - En la carga de archivos en un principio solo estabamos tomando en cuenta el cifrado para documentos con extensiones .docx, lo cual no era una buena practica, asi que se modifico esta parte, para que pudiese cargar diferentes tipos de extensiones.
 
-## Conclusiones
 
 
 [1]: https://tools.ietf.org/html/rfc8018#section-5.2
