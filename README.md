@@ -150,9 +150,100 @@ Como se puede observar, el problema fue resuelto utilizando un StringBuffer, que
 Consideramos que la función debería ser estática, pues es de propósito general para cualquier archivo, y no requiere de la creación de instancias de ninguna clase para su ejecución efectiva.
 ### GUI
 
+#### Carga de archivos
+
+En la parte de cargar los archivos, al principio se manejo solo documentos con extension .docx, cuando se termino el programa y se quizo cargar otro tipo de extensión no nos pemitia hacer el proceso que se venia haciendo anteriormente, entonces se modifico para que reconociera otro tipo de extensiones.
+
+#### Boton "ENCRYPT"
+
+En este boton se hacen algunas validaciones para poder encriptar el archivo, se empieza porque la contraseña que se ingresa no este vacaia, seguido de que se encripta la contraseña y se comprueba que exista un archivo que encriptar, y por ultimo se hace la encriptación, y se generan dos archivos .cif & .hash. Si alguna de las validaciones son incorrectas, se mostrar un mensaje de error.
+
+```java
+JButton btnEncrypt = new JButton("ENCRYPT");
+		btnEncrypt.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (txtEncryptContra == null || String.valueOf(txtEncryptContra.getPassword()).equals("") )  {
+					JOptionPane.showMessageDialog(frame, "FORMATO NO VALIDO", "ERROR",JOptionPane.ERROR_MESSAGE);
+				}else {
+					char[] contra = txtEncryptContra.getPassword();
+					if(inEnc!= null) {						
+						try {
+							byte[] key = modelo.PBKDF2(contra, SALT.getBytes(), ITERATIONS, KEY_LENGTH);
+							File outEnc = new File(inEnc.getAbsolutePath()+".cif");
+							File outHash = new File(inEnc.getAbsolutePath()+".hash");
+							
+							// Encrypt the file
+							modelo.encrypt(key, inEnc, outEnc);
+							
+							// Generate hash
+							modelo.generateSHA1(inEnc, outHash);
+//							modelo.computeSHA1(inEnc).getBytes(Charset.forName("UTF-8"));
+							
+							
+							
+							
+							
+							
+							JOptionPane.showMessageDialog(frame, "Se ha cifrado el archivo: " +inEnc.getCanonicalPath(), "Encriptar",JOptionPane.INFORMATION_MESSAGE);
+						} catch (Exception e1) {
+							e1.printStackTrace();
+						}
+					}
+				}
+			}
+		});
+		
+```
+
+#### Boton "DECRYPT"
+
+Este boton procede a validar que la contraseña ingresada y el archivo cargado  no esten vacios, seguido de desencriptar el archivo cargado, por ultimo al archivo desencriptado se le añade la verificacion del sha-1 para conocer si este ha sido manipulado o no. Si alguna de las validaciones son incorrectas, se mostrar un mensaje de error.
+
+```java
+JButton btnDecrypt = new JButton("DECRYPT");
+		btnDecrypt.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (textDecryptContra == null || String.valueOf(textDecryptContra.getPassword()).equals("") )  {
+					JOptionPane.showMessageDialog(frame, "FORMATO NO VALIDO", "ERROR",JOptionPane.ERROR_MESSAGE);
+				}else {
+					char[] contra = textDecryptContra.getPassword();
+					if(inDec!= null) {						
+						try {
+							String path = inDec.getAbsolutePath();
+							path = path.substring(0, path.length() - 4);
+							File outDec = new File(path);
+							
+							byte[] key = modelo.PBKDF2(contra, SALT.getBytes(), ITERATIONS, KEY_LENGTH);
+							
+							modelo.decrypt(key, inDec, outDec);
+							
+							if(modelo.verifySHA1(outDec, inHash)) {
+								JOptionPane.showMessageDialog(frame, "Su archivo ha sido descifrado. Los hashes coinciden.", "Hash Valido",JOptionPane.INFORMATION_MESSAGE);
+							} else {
+								JOptionPane.showMessageDialog(frame, "Su archivo ha sido descifrado, pero puede que haya sido manipulado. Los hashes no coinciden.", "Hash Invalido",JOptionPane.WARNING_MESSAGE);
+							}
+							
+//							if(modelo.decrypt(modelo.PBKDF2(contra, SALT.getBytes(), ITERATIONS, KEY_LENGTH), inDec, new File(inDec.getParent()+"/"+"decrypt.docx"), inHash)== true) {
+//								JOptionPane.showMessageDialog(frame, "El hash del cifrado concide con el decifrado", "Hash Valido",JOptionPane.INFORMATION_MESSAGE);
+//							}else {
+//								JOptionPane.showMessageDialog(frame, "El hash del cifrado no concide con el decifrado", "Hash Invalido",JOptionPane.ERROR_MESSAGE);
+//							}
+						} catch (Exception e1) {
+							e1.printStackTrace();
+							JOptionPane.showMessageDialog(frame, "La contraseña no concide", "ERROR",JOptionPane.ERROR_MESSAGE);
+						}
+					}	
+				}
+			}
+		});
+
+```
+
 ## Dificultades
 - Dificultad a la hota de cifrar archivos por encima de los 2.1~ GB
 - Agregar el SHA1 al final del archivo. Entendemos como se deberia hacer, pero no supimos hacerlo apropiadamanete, así que lo que se hizo fue que el hash fuese generado como un archivo por aparte que tambien hay que incluir al descifrar archivos.
+- Por parte de la interfaz grafica esta se implemento por medio de JavaFx, el cual ninguno de los integrantes manejaba muy bien, se procedió a reaprender este entorno para poder desarrollar la aplicación de forma correcta.
+- En la carga de archivos en un principio solo estabamos tomando en cuenta el cifrado para documentos con extensiones .docx, lo cual no era una buena practica, asi que se modifico esta parte, para que pudiese cargar diferentes tipos de extensiones.
 
 ## Conclusiones
 
