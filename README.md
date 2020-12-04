@@ -121,7 +121,33 @@ public void decrypt(byte[] key, File in, File out)
 ```
 
 ### Hash SHA-1
+La parte del cálculo de hash usando SHA-1 fue interesante. Tuvimos algunos problemas inicialmente, pues los algoritmos encontrados generalmente retornaban el cálculo del hash como bytes. Para la aplicación de nuestro proyecto, era necesario que el hash calculado tuviera su representación en String, para que pueda ser imprimido como texto en un archivo. Observemos el Código:
+```java
+public static String computeSHA1(File file) throws Exception {
+		MessageDigest sha1 = MessageDigest.getInstance("SHA1");
+		FileInputStream fis = new FileInputStream(file);
 
+		byte[] data = new byte[1024];
+		int read = 0;
+		while ((read = fis.read(data)) != -1) {
+			sha1.update(data, 0, read);
+		}
+		;
+		byte[] hashBytes = sha1.digest();
+
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < hashBytes.length; i++) {
+			sb.append(Integer.toString((hashBytes[i] & 0xff) + 0x100, 16).substring(1));
+		}
+
+		String fileHash = sb.toString();
+		fis.close();
+		return fileHash;
+
+	}
+```
+Como se puede observar, el problema fue resuelto utilizando un StringBuffer, que efectivamente corría un ciclo sobre los bytes del hash, y lo transformaba a un formato hexadecimal que podía ser interpretado como un String al final del ciclo (en cada iteración se iban guardando los subproductos en el StringBuffer).
+Consideramos que la función debería ser estática, pues es de propósito general para cualquier archivo, y no requiere de la creación de instancias de ninguna clase para su ejecución efectiva.
 ### GUI
 
 ## Dificultades
